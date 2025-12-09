@@ -1,55 +1,57 @@
-const express = require("express")
-const axios = require("axios")
-const cors = require("cors")
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
 
-const app = express()
-app.use(cors())
+const app = express();
+app.use(cors());
 
-// ----------------------
-// GET Followers
-// ----------------------
+// ===================
+// FOLLOWERS
+// ===================
 app.get("/followers", async (req, res) => {
-  const userId = req.query.userid
-  if (!userId) return res.json({ error: "userid missing" })
+  const userId = req.query.userid;
+  if (!userId) return res.json({ error: "userid missing" });
 
   try {
-    const response = await axios.get(`https://friends.roblox.com/v1/users/${userId}/followers`)
-    res.json({
-      count: response.data.totalCount,
-      data: response.data.data
-    })
-  } catch (err) {
-    res.json({ error: "failed fetch followers" })
-  }
-})
+    const url = `https://friends.roblox.com/v1/users/${userId}/followers/count`;
+    const response = await axios.get(url);
 
-// ----------------------
-// GET Following
-// ----------------------
+    res.json({
+      followers: response.data.count
+    });
+  } catch (err) {
+    res.json({ error: "failed to fetch followers" });
+  }
+});
+
+// ===================
+// FOLLOWING
+// ===================
 app.get("/following", async (req, res) => {
-  const userId = req.query.userid
-  if (!userId) return res.json({ error: "userid missing" })
+  const userId = req.query.userid;
+  if (!userId) return res.json({ error: "userid missing" });
 
   try {
-    const response = await axios.get(`https://friends.roblox.com/v1/users/${userId}/followings`)
+    const url = `https://friends.roblox.com/v1/users/${userId}/followings/count`;
+    const response = await axios.get(url);
+
     res.json({
-      count: response.data.totalCount,
-      data: response.data.data
-    })
+      following: response.data.count
+    });
   } catch (err) {
-    res.json({ error: "failed fetch following" })
+    res.json({ error: "failed to fetch following" });
   }
-})
+});
 
-// ----------------------
-// MAIN
-// ----------------------
+// ===================
+// ROOT PAGE
+// ===================
 app.get("/", (req, res) => {
-  res.send("Roblox Followers API is running 🚀")
-})
+  res.send("Roblox Followers API is running 🚀");
+});
 
-const port = process.env.PORT || 10000
+const port = process.env.PORT || 10000;
 app.listen(port, () => {
-  console.log("Server running on port " + port)
-})
+  console.log("Server running on port " + port);
+});
 
