@@ -15,8 +15,12 @@ app.get("/followers", async (req, res) => {
   try {
     const url = `https://friends.roblox.com/v1/users/${userId}/followers/count`;
     const response = await axios.get(url);
-    res.json({ followers: response.data.count });
-  } catch {
+
+    res.json({
+      followers: response.data.count
+    });
+  } catch (err) {
+    console.error(err);
     res.json({ error: "failed to fetch followers" });
   }
 });
@@ -31,8 +35,12 @@ app.get("/following", async (req, res) => {
   try {
     const url = `https://friends.roblox.com/v1/users/${userId}/followings/count`;
     const response = await axios.get(url);
-    res.json({ following: response.data.count });
-  } catch {
+
+    res.json({
+      following: response.data.count
+    });
+  } catch (err) {
+    console.error(err);
     res.json({ error: "failed to fetch following" });
   }
 });
@@ -40,8 +48,14 @@ app.get("/following", async (req, res) => {
 // ===================
 // ROOT
 // ===================
-app.get("/", (req, res) => res.send("Roblox Followers API is running 🚀"));
+app.get("/", (req, res) => {
+  res.send("Roblox Followers API is running 🚀");
+});
 
+// ===================
+// START SERVER
+// ===================
 const port = process.env.PORT || 10000;
 app.listen(port, () => console.log("Server running on port " + port));
+
 
