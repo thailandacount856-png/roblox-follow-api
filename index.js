@@ -5,51 +5,57 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
+const api = axios.create({
+  timeout: 8000 // fix infinite hang
+});
+
+// KEEP RENDER AWAKE
+setInterval(() => {
+  api.get("https://roblox-follow-api-q3jx.onrender.com").catch(() => {});
+}, 240000); // 4 menit
+
 // FOLLOWERS
 app.get("/followers", async (req, res) => {
   const userId = req.query.userid;
-  if (!userId) return res.json({ error: "userid missing" });
+  if (!userId) return res.status(400).json({ error: "userid missing" });
 
   try {
-    const response = await axios.get(`https://friends.roblox.com/v1/users/${userId}/followers/count`);
+    const response = await api.get(`https://friends.roblox.com/v1/users/${userId}/followers/count`);
     res.json({ followers: response.data.count });
-  } catch (err) {
-    console.error(err);
-    res.json({ error: "failed to fetch followers" });
+  } catch {
+    return res.status(500).json({ error: true });
   }
 });
 
 // FOLLOWING
 app.get("/following", async (req, res) => {
   const userId = req.query.userid;
-  if (!userId) return res.json({ error: "userid missing" });
+  if (!userId) return res.status(400).json({ error: "userid missing" });
 
   try {
-    const response = await axios.get(`https://friends.roblox.com/v1/users/${userId}/followings/count`);
+    const response = await api.get(`https://friends.roblox.com/v1/users/${userId}/followings/count`);
     res.json({ following: response.data.count });
-  } catch (err) {
-    console.error(err);
-    res.json({ error: "failed to fetch following" });
+  } catch {
+    return res.status(500).json({ error: true });
   }
 });
 
-// CONNECTIONS (Followers + Following)
+// CONNECTIONS
 app.get("/connections", async (req, res) => {
   const userId = req.query.userid;
-  if (!userId) return res.json({ error: "userid missing" });
+  if (!userId) return res.status(400).json({ error: "userid missing" });
 
   try {
-    const followersRes = await axios.get(`https://friends.roblox.com/v1/users/${userId}/followers/count`);
-    const followingRes = await axios.get(`https://friends.roblox.com/v1/users/${userId}/followings/count`);
+    const followersRes = await api.get(`https://friends.roblox.com/v1/users/${userId}/followers/count`);
+    const followingRes = await api.get(`https://friends.roblox.com/v1/users/${userId}/followings/count`);
 
     res.json({
       followers: followersRes.data.count,
       following: followingRes.data.count,
       connections: followersRes.data.count + followingRes.data.count
     });
-  } catch (err) {
-    console.error(err);
-    res.json({ error: "failed to fetch connections" });
+  } catch {
+    return res.status(500).json({ error: true });
   }
 });
 
@@ -60,3 +66,4 @@ app.get("/", (req, res) => {
 
 const port = process.env.PORT || 10000;
 app.listen(port, () => console.log("Server running on port " + port));
+
