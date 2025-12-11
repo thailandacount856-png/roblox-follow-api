@@ -5,116 +5,45 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
-// ===============================
-// CONFIG
-// ===============================
-const axiosConfig = {
-  headers: {
-    "User-Agent": "Mozilla/5.0 (RobloxDataFetcher/1.0)"
-  },
-  timeout: 6000
-};
+const COOKIE = process.env.ROBLOX_COOKIE;
 
-// Cache 10 menit
-const cache = new Map();
-const CACHE_TIME = 10 * 60 * 1000;
-
-// ===============================
-// RETRY FUNCTION
-// ===============================
-async function fetchRetry(url, tries = 3) {
-  for (let i = 0; i < tries; i++) {
-    try {
-      return await axios.get(url, axiosConfig);
-    } catch (err) {
-      if (i === tries - 1) throw err;
-      await new Promise(r => setTimeout(r, 900));
+// Helper untuk request Roblox API
+async function robloxRequest(url) {
+  const res = await axios.get(url, {
+    headers: {
+      Cookie: `.ROBLOSECURITY=${COOKIE}`,
+      "User-Agent": "Mozilla/5.0"
     }
-  }
+  });
+  return res.data;
 }
 
-// ===============================
-// GET FOLLOWERS + FOLLOWING
-// ===============================
-async function getConnections(userId) {
-  const now = Date.now();
-  const exist = cache.get(userId);
-
-  // Gunakan cache jika masih valid
-  if (exist && now - exist.time < CACHE_TIME) {
-    return exist.data;
-  }
-
-  // Fetch fresh
-  const followersRes = await fetchRetry(`https://friends.roblox.com/v1/users/${userId}/followers/count`);
-  const followingRes = await fetchRetry(`https://friends.roblox.com/v1/users/${userId}/followings/count`);
-
-  const data = {
-    followers: followersRes.data.count,
-    following: followingRes.data.count,
-    connections: followersRes.data.count + followingRes.data.count
-  };
-
-  cache.set(userId, { time: now, data });
-  return data;
-}
-
-// ===============================
-// API ROUTES
-// ===============================
-
-// Full connections
-app.get("/connections", async (req, res) => {
+// Endpoint API: /stats?userid=123
+app.get("/stats", async (req, res) => {
   const userId = req.query.userid;
   if (!userId) return res.json({ error: "userid missing" });
 
   try {
-    const data = await getConnections(userId);
-    res.json(data);
-  } catch (err) {
-    console.error("Failed /connections:", err);
-    res.json({ followers: "?", following: "?", connections: "?" });
+    const followers = await robloxRequest(`https://friends.roblox.com/v1/users/${userId}/followers/count`);
+    const following = await robloxRequest(`https://friends.roblox.com/v1/users/${userId}/followings/count`);
+    const friends = await robloxRequest(`https://friends.roblox.com/v1/users/${userId}/friends/count`);
+
+    res.json({
+      followers: followers.count,
+      following: following.count,
+      connections: friends.count
+    });
+
+  } catch (e) {
+    console.log("Error:", e.response?.data || e.message);
+    res.json({
+      followers: "?",
+      following: "?",
+      connections: "?"
+    });
   }
 });
 
-// Followers only
-app.get("/followers", async (req, res) => {
-  const userId = req.query.userid;
-  if (!userId) return res.json({ error: "userid missing" });
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Server running on port " + PORT));
 
-  try {
-    const data = await getConnections(userId);
-    res.json({ followers: data.followers });
-  } catch {
-    res.json({ followers: "?" });
-  }
-});
-
-// Following only
-app.get("/following", async (req, res) => {
-  const userId = req.query.userid;
-  if (!userId) return res.json({ error: "userid missing" });
-
-  try {
-    const data = await getConnections(userId);
-    res.json({ following: data.following });
-  } catch {
-    res.json({ following: "?" });
-  }
-});
-
-// Root route
-app.get("/", (req, res) => {
-  res.send("Roblox Followers API is Running 🚀");
-});
-
-// Keepalive (anti-sleep)
-setInterval(() => {
-  axios.get(process.env.SELF_URL || "https://your-app.onrender.com").catch(() => {});
-}, 60000);
-
-// ===============================
-// SERVER START
-// ===============================
-const port = process.env.PORT || 10000;
-app.listen(port, () => console.log("Server running on port " + port));
