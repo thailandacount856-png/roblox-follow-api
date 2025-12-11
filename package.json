@@ -2,6 +2,9 @@
   "name": "roblox-follow-api",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "express": "^4.18.2",
     "axios": "^1.6.7",
@@ -11,3 +14,4 @@
     "start": "node index.js"
   }
 }
+
