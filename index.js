@@ -20,7 +20,7 @@ const cache = new Map();
 const CACHE_TIME = 10 * 60 * 1000;
 
 // ===============================
-// RETRY
+// RETRY FUNCTION
 // ===============================
 async function fetchRetry(url, tries = 3) {
   for (let i = 0; i < tries; i++) {
@@ -34,13 +34,13 @@ async function fetchRetry(url, tries = 3) {
 }
 
 // ===============================
-// FETCH FULL COMBO (followers + following)
+// GET FOLLOWERS + FOLLOWING
 // ===============================
 async function getConnections(userId) {
   const now = Date.now();
   const exist = cache.get(userId);
 
-  // Use cache if valid
+  // Gunakan cache jika masih valid
   if (exist && now - exist.time < CACHE_TIME) {
     return exist.data;
   }
@@ -62,6 +62,8 @@ async function getConnections(userId) {
 // ===============================
 // API ROUTES
 // ===============================
+
+// Full connections
 app.get("/connections", async (req, res) => {
   const userId = req.query.userid;
   if (!userId) return res.json({ error: "userid missing" });
@@ -69,12 +71,9 @@ app.get("/connections", async (req, res) => {
   try {
     const data = await getConnections(userId);
     res.json(data);
-  } catch {
-    res.json({
-      followers: "?",
-      following: "?",
-      connections: "?"
-    });
+  } catch (err) {
+    console.error("Failed /connections:", err);
+    res.json({ followers: "?", following: "?", connections: "?" });
   }
 });
 
@@ -104,12 +103,12 @@ app.get("/following", async (req, res) => {
   }
 });
 
-// Root
+// Root route
 app.get("/", (req, res) => {
   res.send("Roblox Followers API is Running 🚀");
 });
 
-// Keepalive (anti sleep)
+// Keepalive (anti-sleep)
 setInterval(() => {
   axios.get(process.env.SELF_URL || "https://your-app.onrender.com").catch(() => {});
 }, 60000);
@@ -119,5 +118,3 @@ setInterval(() => {
 // ===============================
 const port = process.env.PORT || 10000;
 app.listen(port, () => console.log("Server running on port " + port));
-
-
