@@ -5,6 +5,7 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
+// Ambil ROBLOX_COOKIE dari environment variable
 const COOKIE = process.env.ROBLOX_COOKIE;
 if (!COOKIE) {
   console.error("Error: ROBLOX_COOKIE belum diset di environment variables.");
@@ -58,6 +59,7 @@ app.get("/stats", async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
 
 
